@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Car</title>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.css">
+</head>
+
+<body>
+    <div id="app" class="container">
+        <table class="table table-bordered">
+            <caption>
+                <!-- text-颜色  danger：红色-->
+                <h3 class="text-center text-primary">购物车</h3>
+            </caption>
+            <tr>
+                <th class="text-center">全选<input type="checkbox" v-model="selectAll"></th>
+                <th class="text-center">商品名称</th>
+                <th class="text-center">商品价格</th>
+                <th class="text-center">商品数量</th>
+                <th class="text-center">商品小计</th>
+                <th class="text-center">操作</th>
+            </tr>
+            <tr v-for="pl in productList">
+                <td class="text-center"><input type="checkbox" v-model='pl.isChecked'></td>
+                <td class="text-center">{{pl.productName}}</td>
+                <td class="text-center">{{pl.productPrice}}</td>
+                <td class="text-center"><input class="text-center" type="text" v-model='pl.productCount'></td>
+                <td class="text-center">{{pl.productCount*pl.productPrice}}</td>
+                <td class="text-center">
+                    <button class="btn btn-danger" @click='remove(pl)'>删除</button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="6">总价：{{total}}</td>
+            </tr>
+        </table>
+
+    </div>
+</body>
+
+</html>
+<script src="../node_modules/axios/dist/axios.js"></script>
+<script src="../node_modules/vue/dist/vue.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            productList: [],
+        },
+        mounted() {
+            let lists = JSON.parse(localStorage.getItem('lists'));
+            if (lists) {
+                this.productList = lists;
+            }else{
+                axios.get('./car.json').then((res) => {
+                    // console.log(res);
+                    this.productList = res.data
+                });
+            }
+            
+        },
+        methods: {
+            remove(current) {
+                let flag = window.confirm("确认删除吗？")
+                if (flag) {
+                    this.productList = this.productList.filter(p => current != p);
+                }
+            }
+        },
+        watch:{
+            productList:{
+                handler(){
+                    localStorage.setItem('lists',JSON.stringify(this.productList));
+
+                },
+                deep:true,
+            }
+        },
+        computed: {
+            total(){
+                return this.productList.reduce((prev,next,currentIndex,arr)=>{
+                    return next.isChecked?prev+next.productPrice*next.productCount:prev;
+                },0)
+            },
+            selectAll: {
+                get() {
+                    return this.productList.every(product => product.isChecked);
+                },
+                set(val) {
+                    this.productList.forEach(product => product.isChecked = val);
+                }
+            }
+        }
+    })
+</script>
